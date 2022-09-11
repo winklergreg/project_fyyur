@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class Venue(db.Model):
     __tablename__ = 'Venues'
@@ -22,9 +23,9 @@ class Venue(db.Model):
         filter(lambda s: s.start_time < datetime.now(), self.shows)
       )
       return [{
-        'venue_id': show.venue.id,
-        'venue_name': show.venue.name,
-        'venue_image_link': show.venue.image_link,
+        'artist_id': show.artist.id,
+        'artist_name': show.artist.name,
+        'artist_image_link': show.artist.image_link,
         'start_time': show.start_time.isoformat()
       } for show in past_shows]
 
@@ -34,23 +35,23 @@ class Venue(db.Model):
         filter(lambda s: s.start_time >= datetime.now(), self.shows)
       )
       return [{
-        'venue_id': show.venue.id,
-        'venue_name': show.venue.name,
-        'venue_image_link': show.venue.image_link,
+        'artist_id': show.artist.id,
+        'artist_name': show.artist.name,
+        'artist_image_link': show.artist.image_link,
         'start_time': show.start_time.isoformat()
       } for show in upcoming_shows]
 
     @property
-    def past_show_count(self):
+    def past_shows_count(self):
       try:
         return len(self.past_shows)
       except:
         return 0
 
     @property
-    def upcoming_show_count(self):
+    def upcoming_shows_count(self):
       try:
-        return len(self.upcoming_show_count)
+        return len(self.upcoming_shows)
       except:
         return 0
 
@@ -72,9 +73,9 @@ class Venue(db.Model):
         'website': self.website_link,
         'seeking_talent': self.seeking_talent,
         'seeking_description': self.seeking_description,
-        'past_show_count': self.past_show_count,
+        'past_shows_count': self.past_shows_count,
         'past_shows': self.past_shows,
-        'upcoming_show_count': self.upcoming_show_count,
+        'upcoming_shows_count': self.upcoming_shows_count,
         'upcoming_shows': self.upcoming_shows
       }
 
@@ -105,9 +106,9 @@ class Artist(db.Model):
         filter(lambda s: s.start_time < datetime.now(), self.shows)
       )
       return [{
-        'artist_id': show.artist.id,
-        'artist_name': show.artist.name,
-        'artist_image_link': show.artist.image_link,
+        'venue_id': show.venue.id,
+        'venue_name': show.venue.name,
+        'venue_image_link': show.venue.image_link,
         'start_time': show.start_time.isoformat()
       } for show in past_shows]
 
@@ -118,23 +119,23 @@ class Artist(db.Model):
       )
 
       return [{
-        'artist_id': show.artist.id,
-        'artist_name': show.artist.name,
-        'artist_image_link': show.artist.image_link,
+        'venue_id': show.venue.id,
+        'venue_name': show.venue.name,
+        'venue_image_link': show.venue.image_link,
         'start_time': show.start_time.isoformat()
       } for show in upcoming_shows]
 
     @property
-    def past_show_count(self):
+    def past_shows_count(self):
       try:
         return len(self.past_shows)
       except:
         return 0
 
     @property
-    def upcoming_show_count(self):
+    def upcoming_shows_count(self):
       try:
-        return len(self.upcoming_show_count)
+        return len(self.upcoming_shows)
       except:
         return 0
 
@@ -156,9 +157,9 @@ class Artist(db.Model):
         'website': self.website_link,
         'seeking_venues': self.seeking_venues,
         'seeking_description': self.seeking_description,
-        'past_show_count': self.past_show_count,
+        'past_shows_count': self.past_shows_count,
         'past_shows': self.past_shows,
-        'upcoming_show_count': self.upcoming_show_count,
+        'upcoming_shows_count': self.upcoming_shows_count,
         'upcoming_shows': self.upcoming_shows
       }
 
@@ -178,9 +179,9 @@ class Show(db.Model):
   def format(self):
     return {
       'venue_id': self.venue_id,
-      'venue_name': 'test',
+      'venue_name': self.venue.name,
       'artist_id': self.artist_id,
-      'artist_name': 'test',
-      'artist_image_link': 'test_link',
+      'artist_name': self.artist.name,
+      'artist_image_link': self.artist.image_link,
       'start_time': self.start_time.isoformat()
     }
