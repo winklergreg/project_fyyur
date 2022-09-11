@@ -2,9 +2,13 @@
 # Imports
 #----------------------------------------------------------------------------#
 
+import itertools
 import json
+from tokenize import group
 import dateutil.parser
 import babel
+import psycopg2
+import collections
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_migrate import Migrate
@@ -22,6 +26,8 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
+db.create_all()
+collections.Callable = collections.abc.Callable
 
 # TODO: connect to a local postgresql database
 migrate = Migrate(app, db)
@@ -31,7 +37,7 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 
 class Venue(db.Model):
-    __tablename__ = 'Venue'
+    __tablename__ = 'Venues'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
@@ -46,10 +52,16 @@ class Venue(db.Model):
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String)
 
+    def __repr__(self):
+      return f"<Venue id={self.id}, name={self.name}"
+
+    def __getitem__(self, key):
+      return getattr(self, key)
+    
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
-    __tablename__ = 'Artist'
+    __tablename__ = 'Artists'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
@@ -63,9 +75,31 @@ class Artist(db.Model):
     seeking_venues = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String)
 
+    def __getitem__(self, key):
+      return getattr(self, key)
+
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+class Show(db.Model):
+  __tablename__ = 'Shows'
+
+  id = db.Column(db.Integer, primary_key=True)
+  artist_id = db.Column(db.Integer, db.ForeignKey('Artists.id'), nullable=False)
+  venue_id = db.Column(db.Integer, db.ForeignKey('Venues.id'), nullable=False)
+  venue = db.relationship('Venue', backref='shows', lazy=True)
+  artist = db.relationship('Artist', backref='shows', lazy=True)
+  start_time = db.Column(db.DateTime)
+
+  def format(self):
+    return {
+      'venue_id': self.venue_id,
+      'venue_name': 'test',
+      'artist_id': self.artist_id,
+      'artist_name': 'test',
+      'artist_image_link': 'test_link',
+      'start_time': self.start_time.isoformat()
+    }
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -97,30 +131,19 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-  '''
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
-  '''
+  
   data = Venue.query.all()
+  
+  keys = lambda k: (k['city'], k['state'])
+  sorted_keys = sorted(data, key=keys)
+  grouped_data = itertools.groupby(sorted_keys, key=keys)
+  venues = [{
+    'city': key[0],
+    'state': key[1],
+    'venues': list(gd)
+  } for key, gd in grouped_data]
+
+  '''
   venues = []
   for d in data:
     temp = d.__dict__
@@ -142,7 +165,7 @@ def venues():
         'venues': [venue_data]
       }
     venues.append(new_venue)
-      
+  '''
   return render_template('pages/venues.html', areas=venues);
 
 @app.route('/venues/search', methods=['POST'])
@@ -557,6 +580,7 @@ def create_artist_submission():
 def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
+  '''
   data=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
@@ -593,6 +617,9 @@ def shows():
     "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
     "start_time": "2035-04-15T20:00:00.000Z"
   }]
+  '''
+  shows = Show.query.order_by(Show.start_time.desc()).all()
+  data = [show.format() for show in shows]
   return render_template('pages/shows.html', shows=data)
 
 @app.route('/shows/create')
@@ -606,13 +633,10 @@ def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
   # TODO: insert form data as a new Show record in the db, instead
   data = request.form
-  artist_show = Artist(
-    id=data['artist_id']
-  )
-  venue_show = Venue(
-    id=data['venue_id']
-  )
-  show = Shows(
+  print(data)
+  show = Show(
+    artist_id=data['artist_id'],
+    venue_id=data['venue_id'],
     start_time=data['start_time']
   )
 
@@ -622,9 +646,9 @@ def create_show_submission():
     db.session.add(show)
     db.session.commit()
     flash('Show was successfully listed!')
-  except:
+  except Exception as e:    
     db.session.rollback()
-    flash('Show listing was unsuccessful')
+    flash(e)
   finally:
     db.session.close()
     return render_template('pages/home.html')
