@@ -73,7 +73,7 @@
 </section>
 
 <a href="/artists/{{ artist.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
-<a href="/artists/{{ artist.id }}"><button id="delete-artist" data-id="{{ artist.id }}" class="btn btn-primary btn-lg">Delete</button></a>
+<a href="/"><button id="delete-artist" data-id="{{ artist.id }}" class="btn btn-primary btn-lg">Delete</button></a>
 <script>
 	const deleteBtn = document.getElementById('delete-artist')
 	deleteBtn.onclick = function(e) {
