@@ -119,22 +119,24 @@ def create_venue_submission():
   genres = data.to_dict(flat=False).get('genres')
 
   try:
-    venue = Venue(
-      name=data['name'],
-      city=data['city'],
-      state=data['state'],
-      address=data['address'],
-      phone=data['phone'],
-      genres=', '.join(genres),
-      facebook_link=data['facebook_link'],
-      image_link=data['image_link'],
-      website_link=data['website_link'],
-      seeking_talent=True if 'seeking_talent' in data else False,
-      seeking_description=data['seeking_description']
-    )
-    db.session.add(venue)
-    db.session.commit()
-    flash('Venue ' + data['name'] + ' was successfully listed!', 'success')
+    form = VenueForm(data)
+    if form.validate():
+      venue = Venue(
+        name=data['name'],
+        city=data['city'],
+        state=data['state'],
+        address=data['address'],
+        phone=data['phone'],
+        genres=', '.join(genres),
+        facebook_link=data['facebook_link'],
+        image_link=data['image_link'],
+        website_link=data['website_link'],
+        seeking_talent=True if 'seeking_talent' in data else False,
+        seeking_description=data['seeking_description']
+      )
+      db.session.add(venue)
+      db.session.commit()
+      flash('Venue ' + data['name'] + ' was successfully listed!', 'success')
   except:
     db.session.rollback()
     flash('An error occurred. Venue ' + data['name'] + ' could not be listed.', 'danger')
@@ -142,10 +144,10 @@ def create_venue_submission():
     db.session.close()
     return render_template('pages/home.html')
 
-@app.route('/venues/<venue_id>', methods=['DELETE'])
+@app.route('/venues/<int:venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
   try:
-    venue = Venue.query.filter_by(id=venue_id).first()
+    venue = Venue.query.get(venue_id)
     db.session.delete(venue)
     db.session.commit()
     flash(f'Venue ID {venue_id} deleted.')
@@ -196,10 +198,10 @@ def show_artist(artist_id):
   
   return render_template('pages/show_artist.html', artist=data)
 
-@app.route('/artists/<artist_id>', methods=['DELETE'])
+@app.route('/artists/<int:artist_id>', methods=['DELETE'])
 def delete_artist(artist_id):
   try:
-    artist = Artist.query.filter_by(id=artist_id).first()
+    artist = Artist.query.get(artist_id)
     db.session.delete(artist)
     db.session.commit()
     flash(f'Artist ID {artist_id} deleted.')
@@ -263,9 +265,9 @@ def edit_venue(venue_id):
     'id': venue.id,
     'name': venue.name,
     'genres': venue.genres.split(', '),
+    'address': venue.address,
     'city': venue.city,
     'state': venue.state,
-    'address': venue.address,
     'phone': venue.phone,
     'website_link': venue.website_link,
     'facebook_link': venue.facebook_link,
@@ -310,21 +312,23 @@ def create_artist_submission():
   genres = data.to_dict(flat=False).get('genres')
   
   try:
-    artist = Artist(
-      name=data['name'],
-      city=data['city'],
-      state=data['state'],
-      phone=data['phone'],
-      genres=', '.join(genres),
-      image_link=data['image_link'],
-      facebook_link=data['facebook_link'],
-      website_link=data['website_link'],
-      seeking_venues=True if 'seeking_venues' in data else False,
-      seeking_description=data['seeking_description']
-    )
-    db.session.add(artist)
-    db.session.commit()
-    flash('Artist ' + data['name'] + ' was successfully listed!')
+    form = ArtistForm(data)
+    if form.validate():
+      artist = Artist(
+        name=data['name'],
+        city=data['city'],
+        state=data['state'],
+        phone=data['phone'],
+        genres=', '.join(genres),
+        image_link=data['image_link'],
+        facebook_link=data['facebook_link'],
+        website_link=data['website_link'],
+        seeking_venues=True if 'seeking_venues' in data else False,
+        seeking_description=data['seeking_description']
+      )
+      db.session.add(artist)
+      db.session.commit()
+      flash('Artist ' + data['name'] + ' was successfully listed!')
   except:
     db.session.rollback()
     flash('An error occurred. Artist ' + data['name'] + ' could not be added.')
