@@ -76,18 +76,20 @@
 </section>
 
 <a href="/venues/{{ venue.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
-<a href="/"><button id="delete-venue" data-id="{{ venue.id }}" class="btn btn-primary btn-lg">Delete</button></a>
+<a href="/venues/{{ venue.id }}/delete"></a><button id="delete-venue" data-id="{{ venue.id }}" class="btn btn-primary btn-lg">Delete</button></a>
 <script>
 
 	const deleteBtn = document.getElementById('delete-venue')
 	deleteBtn.onclick = function(e) {
 		const venueId = e.target.dataset['id']
-		fetch('/venues/' + venueId, {
+		fetch('/venues/' + venueId + '/delete', {
 			method: 'DELETE',
 			header: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json'
 			}
+		}).then(function (response) {
+			return response.json();
 		})
 	}
 </script>

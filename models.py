@@ -55,10 +55,8 @@ class Venue(db.Model):
       except:
         return 0
 
-    def update_venue(self):
-      db.session.add(self)
+    def update_db(self):
       db.session.commit()
-      db.session.close()
 
     def format(self):
       return {
@@ -98,7 +96,7 @@ class Artist(db.Model):
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website_link = db.Column(db.String(120))
-    seeking_venues = db.Column(db.Boolean)
+    seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
 
     @property
@@ -140,10 +138,8 @@ class Artist(db.Model):
       except:
         return 0
 
-    def update_artist(self):
-      db.session.add(self)
+    def update_db(self):
       db.session.commit()
-      db.session.close()
 
     def format(self):
       return {
@@ -156,7 +152,7 @@ class Artist(db.Model):
         'image_link': self.image_link,
         'facebook_link': self.facebook_link,
         'website': self.website_link,
-        'seeking_venues': self.seeking_venues,
+        'seeking_venue': self.seeking_venue,
         'seeking_description': self.seeking_description,
         'past_shows_count': self.past_shows_count,
         'past_shows': self.past_shows,

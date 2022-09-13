@@ -136,15 +136,15 @@ def create_venue_submission():
       )
       db.session.add(venue)
       db.session.commit()
-      flash('Venue ' + data['name'] + ' was successfully listed!', 'success')
+      flash('Venue ' + data['name'] + ' was successfully listed!')
   except:
     db.session.rollback()
-    flash('An error occurred. Venue ' + data['name'] + ' could not be listed.', 'danger')
+    flash('An error occurred. Venue ' + data['name'] + ' could not be listed.')
   finally:
     db.session.close()
     return render_template('pages/home.html')
 
-@app.route('/venues/<int:venue_id>', methods=['DELETE'])
+@app.route('/venues/<int:venue_id>/delete', methods=['DELETE'])
 def delete_venue(venue_id):
   try:
     venue = Venue.query.get(venue_id)
@@ -198,7 +198,7 @@ def show_artist(artist_id):
   
   return render_template('pages/show_artist.html', artist=data)
 
-@app.route('/artists/<int:artist_id>', methods=['DELETE'])
+@app.route('/artists/<int:artist_id>/delete', methods=['DELETE'])
 def delete_artist(artist_id):
   try:
     artist = Artist.query.get(artist_id)
@@ -217,7 +217,9 @@ def delete_artist(artist_id):
 #  ----------------------------------------------------------------
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-  artist = Artist.query.filter_by(id=artist_id).first()
+  form = ArtistForm(request.form)
+  artist = Artist.query.get(artist_id)
+
   if artist is None:
     abort(404)
 
@@ -230,34 +232,45 @@ def edit_artist(artist_id):
     'phone': artist.phone,
     'website_link': artist.website_link,
     'facebook_link': artist.facebook_link,
-    'seeking_venues': artist.seeking_venues,
+    'seeking_venue': artist.seeking_venue,
     'seeking_description': artist.seeking_description,
     'image_link': artist.image_link
   }
+  print(data)
   form = ArtistForm(formdata=None, data=data)
 
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  artist_edit = Artist.query.filter_by(id=artist_id).first()
-
-  if artist_edit is None:
-    abort(404)
-  
-  form = ArtistForm(request.form, obj=artist_edit)
-  if form.validate():
-    form.genres.data = ', '.join(form.genres.data)
-    form.populate_obj(artist_edit)
-    artist_edit.update_artist()
-    
-    return redirect(url_for('show_artist', artist_id=artist_id))
-  else:
-    return render_template('forms/edit_artist.html', form=form, artist=artist_edit)
+  form = ArtistForm(request.form)
+  artist = Artist.query.filter_by(id=artist_id).first()
+  try:
+    if form.validate():
+      artist.name = form.data['name']
+      artist.genres = ', '.join(form.data['genres'])
+      artist.city = form.data['city']
+      artist.state = form.data['state']
+      artist.phone = form.data['phone']
+      artist.website_link = form.data['website_link']
+      artist.facebook_link = form.data['facebook_link']
+      artist.image_link = form.data['image_link']
+      artist.seeking_description = form.data['seeking_description']
+      artist.seeking_venue = form.data['seeking_venue']
+      
+      artist.update_db()
+      flash(f'Artist ID {artist_id} updated.')
+      return redirect(url_for('show_artist', artist_id=artist_id))
+  except:
+    db.session.rollback()
+    flash(f'Artist ID {artist_id} could not be updated.')
+    return render_template('forms/edit_artist.html', form=form, artist=artist)
+  finally:
+    db.session.close()
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-  venue = Venue.query.filter_by(id=venue_id).first()
+  venue = Venue.query.get(venue_id)
   if venue is None:
     abort(404)
 
@@ -281,20 +294,34 @@ def edit_venue(venue_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  venue_edit = Venue.query.filter_by(id=venue_id).first()
-
-  if venue_edit is None:
+  venue = Venue.query.get(venue_id)
+  if venue is None:
     abort(404)
   
-  form = VenueForm(request.form, obj=venue_edit)
-  if form.validate():
-    form.genres.data = ', '.join(form.genres.data)
-    form.populate_obj(venue_edit)
-    venue_edit.update_venue()
-    
-    return redirect(url_for('show_venue', venue_id=venue_id))
-  else:
-    return render_template('forms/edit_venue.html', form=form, venue=venue_edit)
+  form = VenueForm(request.form)
+  try:
+    if form.validate():
+      venue.name = form.data['name']
+      venue.genres = ', '.join(form.data['genres'])
+      venue.address = form.data['address']
+      venue.city = form.data['city']
+      venue.state = form.data['state']
+      venue.phone = form.data['phone']
+      venue.website_link = form.data['website_link']
+      venue.facebook_link = form.data['facebook_link']
+      venue.seeking_talent = form.data['seeking_talent']
+      venue.seeking_description = form.data['seeking_description']
+      venue.image_link = form.data['image_link']
+      
+      venue.update_db()
+      flash(f'Venue ID {venue_id} updated.')
+      return redirect(url_for('show_venue', venue_id=venue_id))
+  except:
+    db.session.rollback()
+    flash(f'Venue ID {venue_id} could not be updated.')
+    return render_template('forms/edit_venue.html', form=form, venue=venue)
+  finally:
+    db.session.close()
 
 #  ----------------------------------------------------------------
 #  Create Artist
@@ -323,7 +350,7 @@ def create_artist_submission():
         image_link=data['image_link'],
         facebook_link=data['facebook_link'],
         website_link=data['website_link'],
-        seeking_venues=True if 'seeking_venues' in data else False,
+        seeking_venue=True if 'seeking_venue' in data else False,
         seeking_description=data['seeking_description']
       )
       db.session.add(artist)

@@ -78,12 +78,8 @@
 	const deleteBtn = document.getElementById('delete-artist')
 	deleteBtn.onclick = function(e) {
 		const artistId = e.target.dataset['id']
-		fetch('/artists/' + artistId, {
+		fetch('/artists/' + artistId + '/delete', {
 			method: 'DELETE',
-			header: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			}
 		})
 	}
 
