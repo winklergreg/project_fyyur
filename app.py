@@ -115,11 +115,12 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
+  form = VenueForm(request.form)
   data = request.form
   genres = data.to_dict(flat=False).get('genres')
 
   try:
-    form = VenueForm(data)
+    
     if form.validate():
       venue = Venue(
         name=data['name'],
@@ -137,6 +138,8 @@ def create_venue_submission():
       db.session.add(venue)
       db.session.commit()
       flash('Venue ' + data['name'] + ' was successfully listed!')
+    else:
+      raise Exception
   except:
     db.session.rollback()
     flash('An error occurred. Venue ' + data['name'] + ' could not be listed.')
@@ -261,6 +264,8 @@ def edit_artist_submission(artist_id):
       artist.update_db()
       flash(f'Artist ID {artist_id} updated.')
       return redirect(url_for('show_artist', artist_id=artist_id))
+    else:
+      raise Exception
   except:
     db.session.rollback()
     flash(f'Artist ID {artist_id} could not be updated.')
@@ -335,30 +340,28 @@ def create_artist_form():
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
   # called upon submitting the new artist listing form
-  data = request.form
-  genres = data.to_dict(flat=False).get('genres')
-  
+  form = ArtistForm(request.form)
   try:
-    form = ArtistForm(data)
     if form.validate():
+      genres = form.data.to_dict(flat=False).get('genres')
       artist = Artist(
-        name=data['name'],
-        city=data['city'],
-        state=data['state'],
-        phone=data['phone'],
+        name=form.data['name'],
+        city=form.data['city'],
+        state=form.data['state'],
+        phone=form.data['phone'],
         genres=', '.join(genres),
-        image_link=data['image_link'],
-        facebook_link=data['facebook_link'],
-        website_link=data['website_link'],
-        seeking_venue=True if 'seeking_venue' in data else False,
-        seeking_description=data['seeking_description']
+        image_link=form.data['image_link'],
+        facebook_link=form.data['facebook_link'],
+        website_link=form.data['website_link'],
+        seeking_venue=True if 'seeking_venue' in form.data else False,
+        seeking_description=form.data['seeking_description']
       )
       db.session.add(artist)
       db.session.commit()
-      flash('Artist ' + data['name'] + ' was successfully listed!')
+      flash('Artist ' + form.data['name'] + ' was successfully listed!')
   except:
     db.session.rollback()
-    flash('An error occurred. Artist ' + data['name'] + ' could not be added.')
+    flash('An error occurred. Artist ' + form.data['name'] + ' could not be added.')
   finally:
     db.session.close()
     return render_template('pages/home.html')
@@ -383,29 +386,30 @@ def create_shows():
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
   # called to create new shows in the db, upon submitting new show listing form
-  data = request.form
-  show = Show(
-    artist_id=data['artist_id'],
-    venue_id=data['venue_id'],
-    start_time=data['start_time']
-  )
-  error_msg = ''
+  form = ShowForm(request.form)
   try:
-    artist_exists = Artist.query.filter_by(id=show.artist_id).first() is not None
-    venue_exists = Venue.query.filter_by(id=show.venue_id).first() is not None
+    if form.validate():
+      show = Show(
+        artist_id=form.data['artist_id'],
+        venue_id=form.data['venue_id'],
+        start_time=form.data['start_time']
+      )
+      artist_exists = Artist.query.filter_by(id=show.artist_id).first() is not None
+      venue_exists = Venue.query.filter_by(id=show.venue_id).first() is not None
 
-    if not artist_exists:
-      error_msg = f'Artist ID {show.artist_id} does not exist'
-    if not venue_exists:
-      error_msg = f'Venue ID {show.venue_id} does not exist'
+      if not artist_exists:
+        raise Exception(f'Artist ID {show.artist_id} does not exist')
+      if not venue_exists:
+        raise Exception( f'Venue ID {show.venue_id} does not exist')
 
-    db.session.add(show)
-    db.session.commit()
-    flash('Show was successfully listed!')
+      db.session.add(show)
+      db.session.commit()
+      flash('Show was successfully listed!')
+    else:
+      raise Exception('Failed to create new show')
   except Exception as e:
     db.session.rollback()
-    if error_msg is not None:
-      flash(error_msg)
+    flash(e)
   finally:
     db.session.close()
     return render_template('pages/home.html')
